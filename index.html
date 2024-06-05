@@ -1,0 +1,191 @@
+  </head>
+  <body>
+    <div id="about">
+      <h2>About This Work</h2>
+      <p>
+        Welcome to my 3D solar system! Here you can explore the solar system and observe the orbit of the planets. You can also take command of the spaceship! Use the up, down, right, and left arrow keys to move the spaceship accordingly.
+      </p>
+    </div>
+    <canvas id="c" width="1000" height="550"></canvas>
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+      function main() {
+        const canvas = document.querySelector("#c");
+        const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+        const fov = 75;
+        const aspect = canvas.clientWidth / canvas.clientHeight;
+        const near = 0.1;
+        const far = 100;
+        const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+        camera.position.z = 30;
+
+        const scene = new THREE.Scene();
+        const loader = new THREE.TextureLoader();
+        const texture1 = loader.load('space.jpeg');
+        scene.background = texture1;
+
+        // Create Solar System Objects
+        function createPlanet(size, textureUrl, positionX, name) {
+          const geometry = new THREE.SphereGeometry(size, 32, 32);
+          const material = new THREE.MeshPhongMaterial({
+            map: loader.load(textureUrl),
+          });
+          const planet = new THREE.Mesh(geometry, material);
+          planet.position.x = positionX;
+          planet.name = name;
+          scene.add(planet);
+          return planet;
+        }
+
+        const sun = createPlanet(5, 'https://i.imgur.com/PWnSJQd.jpeg', 0, 'Sun');
+
+        const planets = [
+          createPlanet(0.5, 'https://i.imgur.com/ds7WOMu.jpeg', 20, 'Pluto'),
+          createPlanet(1, 'https://i.imgur.com/lyLpoMk.jpeg', 18, 'Neptune'),
+          createPlanet(1, 'https://i.imgur.com/2kZNvFw.jpeg', 15, 'Uranus'),
+          createPlanet(2, 'https://i.imgur.com/r9h0U9E.jpeg', 11.5, 'Saturn'),
+          createPlanet(3, 'https://i.imgur.com/KbVscNb.jpeg', 6, 'Jupiter'),
+          createPlanet(1, 'https://i.imgur.com/6uxNerY.jpeg', 2, 'Mars'),
+          createPlanet(2, 'https://i.imgur.com/Ip19PQt.jpeg', -1, 'Earth'),
+          createPlanet(2, 'https://i.imgur.com/YuK3CzJ.jpeg', -6, 'Venus'),
+          createPlanet(1, 'https://i.imgur.com/SLgVbwD.jpeg', -10, 'Mercury')
+        ];
+
+        // Animate Planets
+        function animatePlanets(time) {
+          time *= 0.001;
+          planets.forEach((planet, index) => {
+            const speed = 0.1 + index * 0.05;
+            planet.position.x = Math.cos(time * speed) * (10 + index * 5);
+            planet.position.z = Math.sin(time * speed) * (10 + index * 5);
+          });
+        }
+
+        // Add Light
+        const light = new THREE.DirectionalLight(0xffffff, 5);
+        light.position.set(0, 10, 0);
+        scene.add(light);
+
+        const alight = new THREE.AmbientLight(0x404040, 1);
+        scene.add(alight);
+
+        const hlight = new THREE.HemisphereLight(0xb1e1ff, 0xb97a20, 3);
+        scene.add(hlight);
+
+        // Create Space Ship
+        function createSpaceship() {
+          const spaceship = new THREE.Group();
+
+          // Body
+          const bodyGeometry = new THREE.CylinderGeometry(0.5, 1, 6, 32);
+          const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
+          const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+          body.rotation.x = Math.PI / 2;
+          spaceship.add(body);
+
+          // Cockpit
+          const cockpitGeometry = new THREE.SphereGeometry(1, 32, 32);
+          const cockpitMaterial = new THREE.MeshPhongMaterial({ color: 0x0000ff });
+          const cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
+          cockpit.position.y = 1.5;
+          spaceship.add(cockpit);
+
+          // Engines
+          const engineGeometry = new THREE.CylinderGeometry(0.25, 0.5, 1.5, 32);
+          const engineMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+          const engine1 = new THREE.Mesh(engineGeometry, engineMaterial);
+          engine1.position.set(-0.75, -2, 0);
+          engine1.rotation.z = Math.PI / 2;
+          spaceship.add(engine1);
+
+          const engine2 = engine1.clone();
+          engine2.position.set(0.75, -2, 0);
+          spaceship.add(engine2);
+
+          // Wings
+          const wingGeometry = new THREE.BoxGeometry(1.5, 0.1, 3);
+          const wingMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+          const wing1 = new THREE.Mesh(wingGeometry, wingMaterial);
+          wing1.position.set(0, -1, 1.5);
+          spaceship.add(wing1);
+
+          const wing2 = wing1.clone();
+          wing2.position.set(0, -1, -1.5);
+          spaceship.add(wing2);
+
+          // Tail
+          const tailGeometry = new THREE.BoxGeometry(0.5, 0.1, 2);
+          const tailMaterial = new THREE.MeshPhongMaterial({ color: 0xffa500 });
+          const tail = new THREE.Mesh(tailGeometry, tailMaterial);
+          tail.position.set(0, 3, -1.5);
+          spaceship.add(tail);
+
+          return spaceship;
+        }
+
+        const spaceship = createSpaceship();
+        spaceship.position.set(30, 20, 0); 
+        spaceship.scale.set(2, 2, 2); 
+        scene.add(spaceship);
+
+        console.log('Spaceship added:', spaceship);
+
+        document.addEventListener('keydown', (event) => {
+          switch (event.key) {
+            case 'ArrowUp':
+              spaceship.position.y += 0.5;
+              break;
+            case 'ArrowDown':
+              spaceship.position.y -= 0.5;
+              break;
+            case 'ArrowLeft':
+              spaceship.position.x -= 0.5;
+              break;
+            case 'ArrowRight':
+              spaceship.position.x += 0.5;
+              break;
+          }
+          console.log(`Spaceship position: x=${spaceship.position.x}, y=${spaceship.position.y}`);
+        });
+
+        // Interactive Click Events
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function onMouseClick(event) {
+          mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+          mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+          raycaster.setFromCamera(mouse, camera);
+
+          const intersects = raycaster.intersectObjects(planets);
+
+          if (intersects.length > 0) {
+            console.log(`You clicked on ${intersects[0].object.name}`);
+            alert(`You clicked on ${intersects[0].object.name}`);
+          }
+        }
+
+        window.addEventListener('click', onMouseClick, false);
+
+        // Render Loop
+        function render(time) {
+          animatePlanets(time);
+          renderer.render(scene, camera);
+          requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+
+        const controls = new OrbitControls(camera, canvas);
+        controls.dampingFactor = 0.05;
+        controls.enableDamping = true;
+        controls.enableZoom = true;
+      }
+
+      main();
+    </script>
+  </body>
+</html>
+
